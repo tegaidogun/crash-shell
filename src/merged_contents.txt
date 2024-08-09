@@ -1,0 +1,184 @@
+main.rs:
+mod shell;
+mod command;
+mod error;
+
+use shell::Shell;
+
+fn main() {
+    let mut shell = Shell::new();
+    shell.run();
+}
+
+
+
+
+parser.rs:
+pub struct Command {
+    pub name: String,
+    pub args: Vec<String>,
+}
+
+pub fn parse(input: &str) -> Result<Command, &'static str> {
+    let parts: Vec<&str> = input.trim().split_whitespace().collect();
+    if parts.is_empty() {
+        return Err("No command entered");
+    }
+
+    Ok(Command {
+        name: parts[0].to_string(),
+        args: parts[1..].iter().map(|s| s.to_string()).collect(),
+    })
+}
+
+
+
+
+executor.rs:
+use super::parser::Command;
+use std::process::Command as SystemCommand;
+use std::path::Path;
+
+pub fn execute_command(command: &Command, current_dir: &Path) {
+    let output = SystemCommand::new(&command.name)
+        .args(&command.args)
+        .current_dir(current_dir)
+        .output();
+
+    match output {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            print!("{}", stdout);
+        },
+        Err(e) => eprintln!("Command execution error: {}", e),
+    }
+}
+
+
+
+
+mod.rs:
+pub mod executor;
+pub mod parser;
+
+
+
+
+settings.rs:
+pub struct Settings {
+    // For example, path settings, environment variables, etc.
+}
+
+impl Settings {
+    pub fn new() -> Settings {
+        Settings {
+            // Initialize settings
+        }
+    }
+
+    // Additional methods to manage settings
+}
+
+
+
+
+mod.rs:
+pub mod settings;
+
+
+
+
+mod.rs:
+pub struct ShellError {
+    message: String,
+}
+
+impl std::fmt::Display for ShellError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Shell Error: {}", self.message)
+    }
+}
+
+
+
+
+shell.rs:
+use std::path::PathBuf;
+use std::io::{self, Write};
+use crate::command::{executor, parser};
+
+pub struct Shell {
+    current_dir: PathBuf, // Use PathBuf instead of CString
+}
+
+impl Shell {
+    pub fn new() -> Shell {
+        Shell {
+            current_dir: std::env::current_dir().unwrap(), // Initialize with current directory
+        }
+    }
+
+    pub fn run(&mut self) {
+        let mut input = String::new();
+        loop {
+            print!("$ ");
+            io::stdout().flush().unwrap();
+            std::io::stdin().read_line(&mut input).unwrap();
+
+            if input.trim().is_empty() {
+                continue;
+            }
+
+            if input.trim() == "exit" {
+                break;
+            }
+
+            let command_result = parser::parse(&input);
+            if let Ok(command) = command_result {
+                if command.name == "cd" {
+                    if command.args.len() > 0 {
+                        self.change_dir(&command.args[0]);
+                    } else {
+                        println!("cd: argument required");
+                    }
+                } else {
+                    executor::execute_command(&command, &self.current_dir);
+                }
+            } else if let Err(e) = command_result {
+                println!("Error: {}", e);
+            }
+
+            input.clear();
+        }
+    }
+
+    fn change_dir(&mut self, new_dir: &str) {
+        let new_path = self.current_dir.join(new_dir);
+        if new_path.exists() && new_path.is_dir() {
+            self.current_dir = new_path.canonicalize().unwrap(); // Canonicalize to resolve any '..' or similar
+        } else {
+            println!("Directory not found: {}", new_dir);
+        }
+    }
+}
+
+
+
+
+Directory structure:
+.
+├── command
+│   ├── executor.rs
+│   ├── mod.rs
+│   └── parser.rs
+├── config
+│   ├── mod.rs
+│   └── settings.rs
+├── error
+│   └── mod.rs
+├── main.rs
+├── merged_contents.sh
+├── merged_contents.txt
+└── shell.rs
+
+4 directories, 10 files
