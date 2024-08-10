@@ -12,12 +12,12 @@ Crash Shell is a simple and modular shell implemented in Rust. It supports basic
 
 To start using Crash Shell, clone this repository and build the project:
 
-{}{}{}
+```
 git clone https://github.com/tegaidogun/crash-shell.git
 cd crash-shell
 cargo build
 cargo run
-{}{}{}
+```
 
 ## Documentation
 
