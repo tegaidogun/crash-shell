@@ -25,4 +25,4 @@ For a detailed explanation of how Crash Shell works, including code structure an
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the GNU GPL v3 License. See the `LICENSE` file for details.
